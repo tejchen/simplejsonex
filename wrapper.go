@@ -2,86 +2,34 @@ package simplejson
 
 import (
 	"encoding/json"
-	"github.com/tejchen/go-simplejson-enhancer/go-simplejson"
-	"io"
 	"reflect"
 )
 
-type EJson struct {
-	*sourcesimplejson.Json
-}
-
-func ENew() *EJson {
-	sourceJson := sourcesimplejson.New()
-	resultJson := &EJson{
-		Json: sourceJson,
-	}
-	return resultJson
-}
-
-func ENewJson(body []byte) (*EJson, error) {
-	sourceJson, err := sourcesimplejson.NewJson(body)
-	if err != nil {
-		return &EJson{}, err
-	}
-	resultJson := &EJson{
-		Json: sourceJson,
-	}
-	return resultJson, nil
-}
-
-func ENewJsonRequired(body []byte) *EJson {
-	resultJson, err := ENewJson(body)
+func ENewJsonRequired(body []byte) *Json {
+	resultJson, err := NewJson(body)
 	if err != nil {
 		panic(err)
 	}
 	return resultJson
 }
 
-func EMustNewJson(body []byte) *EJson {
-	resultJson, err := ENewJson(body)
+func EMustNewJson(body []byte) *Json {
+	resultJson, err := NewJson(body)
 	if err != nil {
-		return ENew()
+		return New()
 	}
 	return resultJson
 }
 
-func ENewFromReader(r io.Reader) (*EJson, error) {
-	sourceJson, err := sourcesimplejson.NewFromReader(r)
-	if err != nil {
-		return &EJson{}, err
-	}
-	resultJson := &EJson{
-		Json: sourceJson,
-	}
-	return resultJson, nil
-}
-
-func ENewFromReaderRequired(r io.Reader) *EJson {
-	resultJson, err := ENewFromReader(r)
-	if err != nil {
-		panic(err)
-	}
-	return resultJson
-}
-
-func EMustNewFromReader(r io.Reader) *EJson {
-	resultJson, err := ENewFromReader(r)
-	if err != nil {
-		return ENew()
-	}
-	return resultJson
-}
-
-func EFrom(data interface{}) (*EJson, error) {
+func EFrom(data interface{}) (*Json, error) {
 	sourceJson, e := json.Marshal(data)
 	if e != nil {
 		return nil, e
 	}
-	return ENewJson(sourceJson)
+	return NewJson(sourceJson)
 }
 
-func EFromRequired(data interface{}) *EJson {
+func EFromRequired(data interface{}) *Json {
 	sourceJson, e := json.Marshal(data)
 	if e != nil {
 		panic(e)
@@ -89,7 +37,7 @@ func EFromRequired(data interface{}) *EJson {
 	return EMustNewJson(sourceJson)
 }
 
-func EMustFrom(data interface{}) *EJson {
+func EMustFrom(data interface{}) *Json {
 	sourceJson, e := json.Marshal(data)
 	if e != nil {
 		return nil
@@ -97,40 +45,29 @@ func EMustFrom(data interface{}) *EJson {
 	return EMustNewJson(sourceJson)
 }
 
-func (esj *EJson) ESet(key string, val interface{}) {
+func (j *Json) ESet(key string, val interface{}) {
 	// 自动拆包
-	if data, ok := val.(sourcesimplejson.Json); ok {
-		esj.Set(key, data.Interface())
+	if data, ok := val.(Json); ok {
+		j.Set(key, data.Interface())
 	}
-	if data, ok := val.(*sourcesimplejson.Json); ok {
-		esj.Set(key, data.Interface())
-	}
-	if data, ok := val.(EJson); ok {
-		esj.Set(key, data.Interface())
-	}
-	if data, ok := val.(*EJson); ok {
-		esj.Set(key, data.Interface())
+	if data, ok := val.(*Json); ok {
+		j.Set(key, data.Interface())
 	}
 	// 默认装填
-	esj.Set(key, val)
+	j.Set(key, val)
 }
 
-func (esj *EJson) EGet(key string) *EJson {
-	sourceJson := esj.Get(key)
-	return &EJson{
-		Json: sourceJson,
-	}
+func (j *Json) EGet(key string) *Json {
+	return j.Get(key)
 }
 
-func (esj *EJson) EGetIndex(idx int) *EJson {
-	sourceJson := esj.GetIndex(idx)
-	return &EJson{
-		Json: sourceJson,
-	}
+func (j *Json) EGetIndex(idx int) *Json {
+	sourceJson := j.GetIndex(idx)
+	return sourceJson
 }
 
-func (esj *EJson) EMustArray(args ...[]interface{}) []interface{} {
-	if data, err := esj.Array(); err == nil {
+func (j *Json) EMustArray(args ...[]interface{}) []interface{} {
+	if data, err := j.Array(); err == nil {
 		return data
 	}
 
@@ -139,11 +76,11 @@ func (esj *EJson) EMustArray(args ...[]interface{}) []interface{} {
 		def = args[0]
 	}
 
-	if esj.Interface() == nil {
+	if j.Interface() == nil {
 		return def
 	}
 
-	tt, tv := TypeValue(esj.Interface())
+	tt, tv := TypeValue(j.Interface())
 	if tt.Kind() != reflect.Array && tt.Kind() != reflect.Slice {
 		return def
 	}
@@ -155,8 +92,8 @@ func (esj *EJson) EMustArray(args ...[]interface{}) []interface{} {
 	return data
 }
 
-func (esj *EJson) EMustMap(args ...map[string]interface{}) map[string]interface{} {
-	if data, err := esj.Map(); err == nil {
+func (j *Json) EMustMap(args ...map[string]interface{}) map[string]interface{} {
+	if data, err := j.Map(); err == nil {
 		return data
 	}
 
@@ -165,11 +102,11 @@ func (esj *EJson) EMustMap(args ...map[string]interface{}) map[string]interface{
 		def = args[0]
 	}
 
-	if esj.Interface() == nil {
+	if j.Interface() == nil {
 		return def
 	}
 
-	tt, tv := TypeValue(esj.Interface())
+	tt, tv := TypeValue(j.Interface())
 	if tt.Kind() != reflect.Map {
 		return def
 	}
@@ -181,8 +118,8 @@ func (esj *EJson) EMustMap(args ...map[string]interface{}) map[string]interface{
 	return data
 }
 
-func (esj *EJson) EMustString(args ...string) string {
-	if data, err := esj.String(); err == nil {
+func (j *Json) EMustString(args ...string) string {
+	if data, err := j.String(); err == nil {
 		return data
 	}
 
@@ -191,15 +128,15 @@ func (esj *EJson) EMustString(args ...string) string {
 		def = args[0]
 	}
 
-	if esj.Interface() == nil {
+	if j.Interface() == nil {
 		return def
 	}
 
-	return InterfaceToString(esj.Interface())
+	return InterfaceToString(j.Interface())
 }
 
-func (esj *EJson) EMustInt64(args ...int64) int64 {
-	if data, err := esj.Int64(); err == nil {
+func (j *Json) EMustInt64(args ...int64) int64 {
+	if data, err := j.Int64(); err == nil {
 		return data
 	}
 
@@ -208,15 +145,15 @@ func (esj *EJson) EMustInt64(args ...int64) int64 {
 		def = args[0]
 	}
 
-	if esj.Interface() == nil {
+	if j.Interface() == nil {
 		return def
 	}
 
-	return InterfaceToInt64(esj.Interface())
+	return InterfaceToInt64(j.Interface())
 }
 
-func (esj *EJson) EMustInt(args ...int) int {
-	if data, err := esj.Int(); err == nil {
+func (j *Json) EMustInt(args ...int) int {
+	if data, err := j.Int(); err == nil {
 		return data
 	}
 
@@ -225,7 +162,7 @@ func (esj *EJson) EMustInt(args ...int) int {
 		def = args[0]
 	}
 
-	if esj.Interface() == nil {
+	if j.Interface() == nil {
 		return def
 	}
 
@@ -234,9 +171,9 @@ func (esj *EJson) EMustInt(args ...int) int {
 	return data
 }
 
-func (esj *EJson) EMustInterface(args ...interface{}) interface{} {
-	if esj.Interface() != nil {
-		return esj.Interface()
+func (j *Json) EMustInterface(args ...interface{}) interface{} {
+	if j.Interface() != nil {
+		return j.Interface()
 	}
 
 	var def interface{} = nil
@@ -246,13 +183,13 @@ func (esj *EJson) EMustInterface(args ...interface{}) interface{} {
 	return def
 }
 
-func (esj *EJson) EToJson() (string, error) {
-	bs, err := esj.MarshalJSON()
+func (j *Json) EToJson() (string, error) {
+	bs, err := j.MarshalJSON()
 	return string(bs), err
 }
 
-func (esj *EJson) EToJsonRequired() string {
-	bs, err := esj.MarshalJSON()
+func (j *Json) EToJsonRequired() string {
+	bs, err := j.MarshalJSON()
 	if err != nil {
 		panic(err)
 	}

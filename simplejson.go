@@ -1,4 +1,4 @@
-package sourcesimplejson
+package simplejson
 
 import (
 	"encoding/json"
